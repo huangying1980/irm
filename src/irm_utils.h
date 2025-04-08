@@ -100,7 +100,7 @@ irm_cas32(volatile uint32_t *dst, uint32_t exp, uint32_t src)
 #endif
 
 #ifdef IRM_FAST_MEMCPY
-#define irm irm_fast_memcpy
+#define irm_memcpy irm_fast_memcpy
 #else
 #define irm_memcpy memcpy
 #endif
