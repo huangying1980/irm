@@ -40,7 +40,7 @@ MAJOR := 1
 MINOR := 0
 SMALL := 0
 VERSION := -DIRM_MAJOR=$(MAJOR) -DIRM_MINOR=$(MINOR) -DIRM_SMALL=$(SMALL)
-LDFLAGS := -Wl,--version-script=./irm.ld
+LDFLAGS := -Wl,--version-script=./irm.ver
 DEBUG :=
 ifeq ($(TARGET),debug)
     DEBUG := -DIRM_ERROR_VERBOSE -DIRM_DEBUG_VERBOSE
