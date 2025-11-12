@@ -43,11 +43,8 @@ irm_taskqueue_pop(struct irm_taskqueue* taskqueue)
         irm_errno = -IRM_ERR_GET_AGAIN;
         return NULL;
     }
-    do {
-        head = taskqueue->head;
-        obj = addr[head & taskqueue->mask];
-    } while (!IRM_CAS32(&taskqueue->head, head, head + 1));
-
+    obj = addr[head & taskqueue->mask];
+    taskqueue->head = head + 1;
     return obj;
 }
 
@@ -67,16 +64,14 @@ irm_taskqueue_push(struct irm_taskqueue* taskqueue, irm_ptr_t obj)
     count = taskqueue->count;
 
     available = tail - head;
-  
+
     if (IRM_UNLIKELY(available >= count)) {
         irm_errno = -IRM_ERR_PUSH_AGAIN;
         return irm_errno;
     }
 
-    do {
-        tail = taskqueue->tail;
-        addr[taskqueue->mask & tail] = obj;
-    } while (!IRM_CAS32(&taskqueue->tail, tail, tail + 1));
+    addr[taskqueue->mask & tail] = obj;
+    taskqueue->tail = tail + 1;
 
     return IRM_OK;
 }

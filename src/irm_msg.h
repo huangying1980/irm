@@ -27,8 +27,16 @@ enum {
 #pragma pack(push, 1)
 
 struct irm_msg_header {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     uint8_t                 msg_type:6;
     uint8_t                 role:2;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+    uint8_t                 role:2;
+    uint8_t                 msg_type:6;
+#else
+#   error "Fix your compiler's __BYTE__ORDER__!"
+#endif
+
     uint8_t                 sender_id;
     uint8_t                 target_id;
     uint8_t                 source_id;
@@ -39,7 +47,7 @@ struct irm_msg_header {
 };
 
 struct irm_msg_invitation_body {
-    uint8_t                         empty;
+    uint8_t                         empty[0];
 };
 
 struct irm_msg_invitation {
@@ -48,7 +56,7 @@ struct irm_msg_invitation {
 };
 
 struct irm_msg_close_body {
-    uint8_t                         empty;
+    uint8_t                         empty[0];
 };
 
 struct irm_msg_close {
@@ -81,7 +89,7 @@ struct irm_msg_nack {
 };
 
 struct irm_msg_heartbeat_body {
-    uint8_t                         empty;
+    uint8_t                         empty[0];
 };
 
 struct irm_msg_heartbeat {
