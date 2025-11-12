@@ -115,9 +115,9 @@ irm_update_tail(struct irm_ring_headtail* ht, uint32_t old_val,
     uint32_t new_val, uint32_t single, uint32_t enqueue)
 {
     if (enqueue) {
-        IRM_WMB();
+        IRM_SMP_WMB();
     } else {
-        IRM_RMB();
+        IRM_SMP_RMB();
     }
     if (!single) {
         while (IRM_UNLIKELY(ht->tail != old_val)) {
@@ -140,7 +140,7 @@ irm_ring_move_prod_head(struct irm_ring* r, uint32_t is_sp,
     do {
         n = max;
         *old_head = r->prod.head;
-        IRM_RMB();
+        IRM_SMP_RMB();
 
         *free_entries = (capacity + r->cons.tail - *old_head);
         if (IRM_UNLIKELY(n > *free_entries)) {
@@ -176,7 +176,7 @@ irm_ring_move_cons_head(struct irm_ring* r, uint32_t is_sc,
 
         *old_head = r->cons.head;
 
-        IRM_RMB();
+        IRM_SMP_RMB();
 
         *entries = (r->prod.tail - *old_head);
 
@@ -191,7 +191,7 @@ irm_ring_move_cons_head(struct irm_ring* r, uint32_t is_sc,
         *new_head = *old_head + n;
         if (is_sc) {
             r->cons.head = *new_head;
-            IRM_RMB();
+            IRM_SMP_RMB();
             success = IRM_TRUE;
         } else {
             success = IRM_CAS32(&r->cons.head, *old_head, *new_head);

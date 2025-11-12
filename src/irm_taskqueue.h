@@ -34,9 +34,9 @@ irm_taskqueue_pop(struct irm_taskqueue* taskqueue)
     irm_ptr_t*        addr = (irm_ptr_t *)&taskqueue[1];
     irm_ptr_t         obj;
 
-    IRM_RMB();
     head = taskqueue->head;
     tail = taskqueue->tail;
+    IRM_SMP_RMB();
 
     available = tail - head;
     if (IRM_UNLIKELY(!available)) {
@@ -44,6 +44,7 @@ irm_taskqueue_pop(struct irm_taskqueue* taskqueue)
         return NULL;
     }
     obj = addr[head & taskqueue->mask];
+    IRM_SMP_WMB();
     taskqueue->head = head + 1;
     return obj;
 }
@@ -58,11 +59,11 @@ irm_taskqueue_push(struct irm_taskqueue* taskqueue, irm_ptr_t obj)
     uint32_t          available;
 
 
-    IRM_RMB();
     head = taskqueue->head;
     tail = taskqueue->tail;
     count = taskqueue->count;
 
+    IRM_SMP_RMB();
     available = tail - head;
 
     if (IRM_UNLIKELY(available >= count)) {
@@ -71,6 +72,7 @@ irm_taskqueue_push(struct irm_taskqueue* taskqueue, irm_ptr_t obj)
     }
 
     addr[taskqueue->mask & tail] = obj;
+    IRM_SMP_WMB();
     taskqueue->tail = tail + 1;
 
     return IRM_OK;
@@ -89,28 +91,29 @@ irm_taskqueue_push_batch(struct irm_taskqueue* taskqueue,
     uint32_t    j = 0;
     const uint32_t mask = taskqueue->mask;
 
-    IRM_WMB();
     tail = taskqueue->tail;    
+    IRM_SMP_RMB();
+
     available = tail - taskqueue->head;
     free = taskqueue->count - available;
     if (IRM_UNLIKELY(free < count)) {
         return 0;
     }
     n = (count + 7) >> 3;
-    do {
-        j = tail = taskqueue->tail;    
-        switch (count & 7) {
-            case 0: do { addr[j++ & mask] = mbufs[i++];
-            case 7: addr[j++ & mask] = mbufs[i++];
-            case 6: addr[j++ & mask] = mbufs[i++];
-            case 5: addr[j++ & mask] = mbufs[i++];
-            case 4: addr[j++ & mask] = mbufs[i++];
-            case 3: addr[j++ & mask] = mbufs[i++];
-            case 2: addr[j++ & mask] = mbufs[i++];
-            case 1: addr[j++ & mask] = mbufs[i++];
-                    } while (--n > 0);
-        }
-    } while (!IRM_CAS32(&taskqueue->tail, tail, tail + count));
+    j = tail = taskqueue->tail;    
+    switch (count & 7) {
+        case 0: do { addr[j++ & mask] = mbufs[i++];
+        case 7: addr[j++ & mask] = mbufs[i++];
+        case 6: addr[j++ & mask] = mbufs[i++];
+        case 5: addr[j++ & mask] = mbufs[i++];
+        case 4: addr[j++ & mask] = mbufs[i++];
+        case 3: addr[j++ & mask] = mbufs[i++];
+        case 2: addr[j++ & mask] = mbufs[i++];
+        case 1: addr[j++ & mask] = mbufs[i++];
+                } while (--n > 0);
+    }
+    IRM_SMP_WMB();
+    taskqueue->tail = tail + count;
 
     return count;
 }
@@ -118,14 +121,14 @@ irm_taskqueue_push_batch(struct irm_taskqueue* taskqueue,
 IRM_HOT_CALL static IRM_ALWAYS_INLINE uint32_t
 irm_taskqueue_available(struct irm_taskqueue* taskqueue)
 {
-    IRM_RMB();
+    IRM_SMP_RMB();
     return taskqueue->tail - taskqueue->head;
 }
 
 IRM_HOT_CALL static IRM_ALWAYS_INLINE uint32_t
 irm_taskqueue_full(struct irm_taskqueue* taskqueue)
 {
-    IRM_RMB();
+    IRM_SMP_RMB();
     return taskqueue->tail - taskqueue->head >= taskqueue->count;
 }
 

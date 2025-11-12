@@ -47,16 +47,47 @@ IRM_C_BEGIN
 #define IRM_ATTR_PAGE_ALIGN IRM_ATTR_ALIGN(IRM_PAGE_SIZE)
 #define IRM_ATTR_PACKED __attribute__((packed))
 
-#ifdef IRM_FENCE
-#define IRM_RMB()   _mm_lfence()
-#define IRM_WMB()   _mm_sfence()
-#define IRM_MB()    _mm_mfence()
-#define IRM_PAUSE() _mm_pause()
+#if defined(__x86_64__)
+#   include <emmintrin.h>
+#   define IRM_COMPILER_BARRIER() do {asm volatile ("" : : : "memory");} while (0)
+
+#   define IRM_MB() _mm_mfence()
+#   define IRM_WMB() _mm_sfence()
+#   define IRM_RMB() _mm_lfence()
+
+#   define IRM_SMP_MB() IRM_MB()
+#   define IRM_SMP_WMB() IRM_COMPILER_BARRIER()
+#   define IRM_SMP_RMB() IRM_COMPILER_BARRIER()
+
+#   define IRM_PAUSE()   _mm_pause()
+
+#elif defined(__aarch64__) ||  defined(__arm64__)
+#   define IRM_DSB(opt) asm volatile("dsb " #opt : : : "memory")
+#   define IRM_DMB(opt) asm volatile("dmb " #opt : : : "memory")
+
+#   define IRM_MB() IRM_DSB(sy)
+#   define IRM_WMB() IRM_DSB(st)
+#   define IRM_RMB() IRM_DSB(ld)
+
+#   define IRM_SMP_MB()  IRM_DMB(ish)
+#   define IRM_SMP_WMB() IRM_DMB(ishst)
+#   define IRM_SMP_RMB IRM_DMB(ishst)
+
+#   define IRM_PAUSE() do {asm volatile("yield" ::: "memory");} while(0)
+
+#elif defined(__arm__)
+#   define IRM_MB() __sync_synchronize()
+#   define IRM_WMB() do { asm volatile ("dmb st" : : : "memory"); } while (0)
+#   define IRM_RMB() __sync_synchronize()
+
+#   define IRM_SMP_MB() IRM_MB()
+#   define IRM_SMP_WMB() OTRAD_WMB()
+#   define IRM_SMP_RMB() IRM_RMB()
+
+#   define IRM_PAUSE() ((void)0)
+
 #else
-#define IRM_RMB() 
-#define IRM_WMB()
-#define IRM_MB()
-#define IRM_PAUSE()
+#error "do not supported"
 #endif
 
 #define IRM_LIKELY(x) __builtin_expect(!!(x), 1)
