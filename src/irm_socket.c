@@ -103,7 +103,7 @@ static struct irm_config_option {
 
 IRM_C_END
 
-IRM_PUBHANDLE irm_pub_socket(int type, const char* path)
+IRM_PUBHANDLE irm_pub_socket_impl(int type, const char* path)
 {
     struct irm_pub_context* ctx;
     size_t path_len;
@@ -159,7 +159,7 @@ int irm_pub_bind(IRM_PUBHANDLE handle, const char* local_ip)
     return irm_pub_context_init(ctx);
 }
 
-int irm_pub_close(IRM_PUBHANDLE handle, int flags)
+int irm_pub_close_impl(IRM_PUBHANDLE handle, int flags)
 {
     struct irm_pub_context*  ctx = IRM_PUB_CTX(handle);
     int                      i = IRM_WAIT_RETRY;
@@ -248,7 +248,7 @@ uint8_t irm_pub_getalivedsubs(IRM_PUBHANDLE handle)
     return IRM_PUB_ALIVE_SUB_COUNT(IRM_PUB_CTX(handle));
 }
 
-IRM_SUBHANDLE irm_sub_socket(int type, const char* path)
+IRM_SUBHANDLE irm_sub_socket_impl(int type, const char* path)
 {
     struct irm_sub_context* ctx;
     size_t  path_len;
@@ -303,7 +303,7 @@ int irm_sub_bind(IRM_SUBHANDLE handle, const char* local_ip)
     return irm_sub_context_init(ctx);
 }
 
-int irm_sub_close(IRM_SUBHANDLE handle, int flags)
+int irm_sub_close_impl(IRM_SUBHANDLE handle, int flags)
 {
     struct irm_sub_context* ctx = IRM_SUB_CTX(handle);
     int                     ret = IRM_OK;

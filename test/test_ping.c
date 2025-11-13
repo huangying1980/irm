@@ -52,7 +52,8 @@ static IRM_PUBHANDLE ping_init(int type, int core_id, const char* local_ip)
     struct irm_config_tx         tx;
     int                          ret;
 
-    handle = irm_pub_socket(type, NULL);
+    //handle = irm_pub_socket(type, NULL);
+    handle = irm_pub_socket(type);
     if (!handle) {
         fprintf(stderr, "ping_init failed, irm_pubsocket error %d\n",
             irm_errno);
