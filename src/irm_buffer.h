@@ -60,7 +60,7 @@ irm_buffer_pop(struct irm_buffer* buffer)
     do {
         head = buffer->head;
         tail = buffer->tail;
-        IRM_RMB();
+        IRM_SMP_RMB();
         available = tail - head;
         if (IRM_UNLIKELY(!available)) {
             irm_errno = -IRM_ERR_GET_AGAIN;
@@ -85,7 +85,7 @@ irm_buffer_get(struct irm_buffer* buffer)
     const uint32_t    mask = buffer->mask;
 
     tail = buffer->tail;
-    IRM_RMB();
+    IRM_SMP_RMB();
     available = tail - buffer->curr;
     if (IRM_UNLIKELY(!available)) {
         irm_errno = -IRM_ERR_GET_AGAIN;
@@ -133,6 +133,7 @@ irm_buffer_fifo(struct irm_buffer* buffer, struct irm_mbuf* objs[],
                 } while (--n > 0);
     }
 
+    IRM_SMP_WMB();
     buffer->head = head;
 
     return cnt;
@@ -164,7 +165,9 @@ irm_buffer_fifo_idle(struct irm_buffer* buffer, struct irm_mbuf* objs[],
         ++head;
     }
 
+    IRM_SMP_WMB();
     buffer->head = head;
+
     return cnt;
 }
 
@@ -190,6 +193,7 @@ irm_buffer_put(struct irm_buffer* buffer, struct irm_mbuf* obj)
     }
 
     addr[mask & tail++] = obj;
+    IRM_SMP_WMB();
     buffer->tail = tail;
     IRM_DBG("put obj tail %u, head %u, curr %u",
         buffer->tail, buffer->head, buffer->curr);
@@ -224,6 +228,7 @@ irm_buffer_put_sequence(struct irm_buffer* buffer, struct irm_mbuf* obj,
 
     *seq = tail;
     addr[mask & tail++] = obj;
+    IRM_SMP_WMB();
     buffer->tail = tail;
     IRM_BUFFER_PUT_UNLOCK(buffer);
     IRM_DBG("irm_buffer_put_sequence tail %u, head %u, curr %u, count %u\n",

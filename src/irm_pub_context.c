@@ -867,6 +867,7 @@ irm_pub_context_resend_from_buffer(struct irm_pub_context* ctx,
 #endif
         mbuf->status = IRM_MBUF_STATUS_IDLE;
     }
+    header->target_id = 0;
 }
 
 IRM_HOT_CALL static void

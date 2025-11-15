@@ -1011,6 +1011,12 @@ irm_sub_context_data_handle(struct irm_sub_context* ctx,
         return;
     }
 
+    if (IRM_UNLIKELY(header->target_id && header->target_id != ctx->self_id)) {
+        IRM_DBG("target_id dismatched target_id %u, self_id %u, sender_id %u",
+            header->target_id, ctx->self_id, header->sender_id);
+        irm_mbuf_put(&ctx->netio->rx_pool, mbuf);
+        return;
+    }
     irm_sub_context_nack_update(desc, header);
 
     if (IRM_LIKELY(header->seq == desc->last_seq)) {

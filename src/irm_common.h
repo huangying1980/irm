@@ -81,7 +81,7 @@ IRM_C_BEGIN
 #   define IRM_RMB() __sync_synchronize()
 
 #   define IRM_SMP_MB() IRM_MB()
-#   define IRM_SMP_WMB() OTRAD_WMB()
+#   define IRM_SMP_WMB() IRM_WMB()
 #   define IRM_SMP_RMB() IRM_RMB()
 
 #   define IRM_PAUSE() ((void)0)
