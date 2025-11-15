@@ -19,6 +19,13 @@ IRM_C_BEGIN
 #define IRM_BUFFER_VALVE_ON (0xFFFFFFFFU)
 #define IRM_BUFFER_VALVE_OFF (0U)
 
+#define IRM_BUFFER_PUT_LOCK(_lock)\
+({do {} while (IRM_CAS32((_lock), IRM_BUFFER_LOCK_OFF, IRM_BUFFER_LOCK_ON)); (_lock);})
+
+#define IRM_BUFFER_PUT_AUTO_LOCK(_lock) \
+typeof((_lock)) __attribute__((__cleanup__(irm_buffer_put_auto_unlock))) \
+IRM_UNIQUE(_autolock) = IRM_BUFFER_PUT_LOCK(_lock)
+
 struct irm_buffer {
     size_t            size;
     uint32_t          count; 
@@ -34,15 +41,12 @@ struct irm_buffer {
 #define IRM_BUFFER_LOCK_ON  (1U)
 #define IRM_BUFFER_LOCK_OFF (0U) 
 
-#define IRM_BUFFER_PUT_LOCK(_b) \
-    do {} while (!IRM_CAS32(&(_b)->tlock, \
-        IRM_BUFFER_LOCK_OFF, \
-        IRM_BUFFER_LOCK_ON))
-
-#define IRM_BUFFER_PUT_UNLOCK(_b) \
-    do {} while (!IRM_CAS32(&(_b)->tlock, \
-        IRM_BUFFER_LOCK_ON, \
-        IRM_BUFFER_LOCK_OFF))
+IRM_HOT_CALL static IRM_ALWAYS_INLINE
+void irm_buffer_put_auto_unlock(volatile uint32_t** lock)
+{
+    do {
+    } while (IRM_CAS32(*lock, IRM_BUFFER_LOCK_ON, IRM_BUFFER_LOCK_OFF));
+}
 
 struct irm_buffer* irm_buffer_create(void* mpool, uint32_t count);
 
@@ -212,13 +216,14 @@ irm_buffer_put_sequence(struct irm_buffer* buffer, struct irm_mbuf* obj,
     uint32_t          available;
     const uint32_t    mask = buffer->mask;
 
-    IRM_BUFFER_PUT_LOCK(buffer);
+    //IRM_BUFFER_PUT_LOCK(buffer);
+    IRM_BUFFER_PUT_AUTO_LOCK(&buffer->tlock);
     tail = buffer->tail;
     head = buffer->head;
     count = buffer->count & buffer->valve;
     available = tail - head;
     if (IRM_UNLIKELY(available >= count)) {
-        IRM_BUFFER_PUT_UNLOCK(buffer);
+        //IRM_BUFFER_PUT_UNLOCK(buffer);
         IRM_DBG("buffer full tail %u, head %u, curr %u, count %u, valve %u",
             tail, head, buffer->curr, count, buffer->valve);
         irm_errno = -IRM_ERR_PUT_AGAIN;
@@ -230,7 +235,7 @@ irm_buffer_put_sequence(struct irm_buffer* buffer, struct irm_mbuf* obj,
     addr[mask & tail++] = obj;
     IRM_SMP_WMB();
     buffer->tail = tail;
-    IRM_BUFFER_PUT_UNLOCK(buffer);
+    //IRM_BUFFER_PUT_UNLOCK(buffer);
     IRM_DBG("irm_buffer_put_sequence tail %u, head %u, curr %u, count %u\n",
         buffer->tail, buffer->head, buffer->curr, buffer->count);
 

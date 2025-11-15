@@ -482,11 +482,12 @@ irm_pub_context_invitation_handle(struct irm_pub_context* ctx,
     struct irm_config*          cfg = &ctx->cfg;
     struct irm_msg_invitation*  msg;
     struct irm_mbuf*            ask_mbuf;
-    struct irm_msg_ask*        ask_msg;
-    int                        ret;
-    int                        retry;
-    int                        abort = IRM_FALSE;
-    const uint32_t             offset = ctx->netops.payload_offset;
+    struct irm_msg_ask*         ask_msg;
+    uint8_t                     sender_id;
+    int                         ret;
+    int                         retry;
+    int                         abort = IRM_FALSE;
+    const uint32_t              offset = ctx->netops.payload_offset;
 
     msg = IRM_MBUF_MSG(irm_msg_invitation, mbuf, offset);
 
@@ -496,8 +497,8 @@ irm_pub_context_invitation_handle(struct irm_pub_context* ctx,
     ask_mbuf = ctx->reserved_mbufs[IRM_PUB_ASK_MBUF_ID];
     ask_msg = IRM_MBUF_MSG(irm_msg_ask, ask_mbuf, offset);
     ask_msg->header.seq = msg->header.seq;
-    ask_msg->header.target_id = msg->header.sender_id;
     ask_msg->body.last_seq = 0;
+    sender_id = msg->header.sender_id;
 
     irm_mbuf_put(&ctx->netio->rx_pool, mbuf);
     if (ask_mbuf->status != IRM_MBUF_STATUS_IDLE) {
@@ -507,6 +508,7 @@ irm_pub_context_invitation_handle(struct irm_pub_context* ctx,
 
     retry = cfg->retry;
     while (retry--) {
+        ask_msg->header.target_id = sender_id;
         ret = ctx->netops.send(ctx->netio, ask_mbuf);
         if (ret == IRM_OK) {
             break;
@@ -867,7 +869,6 @@ irm_pub_context_resend_from_buffer(struct irm_pub_context* ctx,
 #endif
         mbuf->status = IRM_MBUF_STATUS_IDLE;
     }
-    header->target_id = 0;
 }
 
 IRM_HOT_CALL static void

@@ -81,8 +81,7 @@ IRM_C_BEGIN
 #   define IRM_RMB() __sync_synchronize()
 
 #   define IRM_SMP_MB() IRM_MB()
-#   define IRM_SMP_WMB() IRM_WMB()
-#   define IRM_SMP_RMB() IRM_RMB()
+#   define IRM_SMP_WMB() IRM_WMB() #   define IRM_SMP_RMB() IRM_RMB()
 
 #   define IRM_PAUSE() ((void)0)
 
@@ -117,6 +116,9 @@ IRM_C_BEGIN
 
 #define IRM_BUG_ON(_c) ((void)sizeof(char[1 - 2*!!(_c)]))
 
+#define _IRM_CONCAT(_a, _b) _a##_b
+#define IRM_CONCAT(_a, _b) _IRM_CONCAT(_a, _b)
+#define IRM_UNIQUE(_prefix) IRM_CONCAT(_prefix, __COUNTER__)
 
 IRM_C_END
 

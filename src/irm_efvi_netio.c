@@ -350,6 +350,9 @@ IRM_EVENT_POLL:
                 for (j = 0; j < sent_n; ++j) {
                     sent_mbuf = IRM_EFVI_NETIO_ID2M(netio->mbuf_pool, ids[j]);
                     sent_mbuf->status = IRM_MBUF_STATUS_IDLE;
+                    header = IRM_MBUF_MSG(irm_msg_header, sent_mbuf,
+                        efvi_netops.payload_offset);
+                    header->target_id = 0;
                     IRM_DBG("sent_mbuf %p netio->mbuf_pool %p, mbuf id %u %u, reserved %u",
                         sent_mbuf, &netio->mbuf_pool->mbufs[ids[j]], ids[j],
                         sent_mbuf->id, sent_mbuf->reserved);
@@ -391,6 +394,7 @@ IRM_HOT_CALL static IRM_ALWAYS_INLINE int
 irm_efvi_netio_send(struct irm_netio* netio, struct irm_mbuf* mbuf)
 {
     struct irm_efvi_netio* eio = IRM_EFVI_NETIO(netio);
+    struct irm_msg_header* header;
     int                    ret = IRM_OK; 
 
     mbuf->status = IRM_MBUF_STATUS_SENDING;
@@ -399,14 +403,9 @@ irm_efvi_netio_send(struct irm_netio* netio, struct irm_mbuf* mbuf)
     IRM_DBG("send mbuf %p %p, reserved %d, id %u",
         mbuf, &netio->mbuf_pool->mbufs[mbuf->id], mbuf->reserved, mbuf->id);
 
-#if defined(IRM_DEBUG) || defined(IRM_DEBUG_VERBOSE)
-    {
-        struct irm_msg_header* header;
-        header = IRM_MBUF_MSG(irm_msg_header, mbuf, efvi_netops.payload_offset);
-        IRM_DBG("send msg type %u, sender_id %u, seq %u", header->msg_type,
-            header->sender_id, header->seq);
-    }
-#endif
+    header = IRM_MBUF_MSG(irm_msg_header, mbuf, efvi_netops.payload_offset);
+    IRM_DBG("send msg type %u, sender_id %u, seq %u", header->msg_type,
+        header->sender_id, header->seq);
 
     irm_efvi_netio_update_size(mbuf);     
     if (eio->ctpio) {
@@ -417,6 +416,7 @@ irm_efvi_netio_send(struct irm_netio* netio, struct irm_mbuf* mbuf)
 #if defined(IRM_DEBUG) || defined (IRM_DEBUG_VERBOSE)
         if (ret < 0) {
             IRM_ERR("ctpio send failed %d", ret);
+            header->target_id = 0;
         }
 #endif
         return ret;
@@ -426,6 +426,7 @@ irm_efvi_netio_send(struct irm_netio* netio, struct irm_mbuf* mbuf)
 #if defined(IRM_DEBUG) || defined(IRM_DEBUG_VERBOSE)
     if (ret < 0) {
         IRM_ERR("transmit failed %d", ret);
+        header->target_id = 0;
     }
 #endif
 

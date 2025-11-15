@@ -300,6 +300,7 @@ IRM_HOT_CALL static IRM_ALWAYS_INLINE int
 irm_native_netio_send(struct irm_netio* netio, struct irm_mbuf* mbuf)
 {
     struct irm_native_netio* nio = IRM_NATIVE_NETIO(netio);
+    struct irm_msg_header*   header;
     size_t                   size = IRM_MBUF_DATA_SIZE(mbuf);
     ssize_t                  ret;
 
@@ -315,14 +316,10 @@ irm_native_netio_send(struct irm_netio* netio, struct irm_mbuf* mbuf)
     netio->idle_ts = 0;
     ret = sendto(netio->lfd, IRM_MBUF_M2D(mbuf), size, 0,
         (struct sockaddr *)&nio->remote, sizeof(nio->remote));
-#if defined(IRM_DEBUG) || defined(IRM_DEBUG_VERBOSE)
-    {
-        struct irm_msg_header* header;
-        header = IRM_MBUF_MSG(irm_msg_header, mbuf, native_netops.payload_offset);
-        IRM_DBG("sendto ret %ld, size %lu,  msg type %u, sender_id %u, seq %u, msg size %u",
-            ret, size, header->msg_type, header->sender_id, header->seq, header->size);
-    }
-#endif
+    header = IRM_MBUF_MSG(irm_msg_header, mbuf, native_netops.payload_offset);
+    header->target_id = 0;
+    IRM_DBG("sendto ret %ld, size %lu,  msg type %u, sender_id %u, seq %u, msg size %u",
+        ret, size, header->msg_type, header->sender_id, header->seq, header->size);
     if (IRM_LIKELY(ret == (ssize_t)size)) {
         mbuf->status = IRM_MBUF_STATUS_IDLE;
         return IRM_OK;

@@ -624,9 +624,10 @@ irm_sub_context_invitation_handle(struct irm_sub_context* ctx,
     struct irm_msg_invitation*  msg;
     struct irm_mbuf*            ask_mbuf;
     struct irm_msg_ask*         ask_msg;
-    int                        ret;
-    int                        retry;
-    int                        abort = IRM_FALSE;
+    uint8_t                     sender_id;
+    int                         ret;
+    int                         retry;
+    int                         abort = IRM_FALSE;
 
     msg = IRM_MBUF_MSG(irm_msg_invitation, mbuf, ctx->netops.payload_offset);
 
@@ -637,8 +638,8 @@ irm_sub_context_invitation_handle(struct irm_sub_context* ctx,
     ask_msg = IRM_MBUF_MSG(irm_msg_ask, ask_mbuf, ctx->netops.payload_offset);
     IRM_DBG("send ask ask_mbuf %p, ask_msg %p", ask_mbuf, ask_msg);
     ask_msg->header.seq = msg->header.seq;
-    ask_msg->header.target_id = msg->header.sender_id;
     ask_msg->body.last_seq = ctx->pubs->desc[msg->header.sender_id].last_seq;
+    sender_id = msg->header.sender_id;
 
     irm_mbuf_put(&ctx->netio->rx_pool, mbuf);
     if (ask_mbuf->status != IRM_MBUF_STATUS_IDLE) {
@@ -647,6 +648,7 @@ irm_sub_context_invitation_handle(struct irm_sub_context* ctx,
     }
     retry = cfg->retry;
     while (retry--) {
+        ask_msg->header.target_id = sender_id;
         ret = ctx->netops.send(ctx->netio, ask_mbuf);
         if (ret == IRM_OK) {
             break;
@@ -1017,6 +1019,7 @@ irm_sub_context_data_handle(struct irm_sub_context* ctx,
         irm_mbuf_put(&ctx->netio->rx_pool, mbuf);
         return;
     }
+
     irm_sub_context_nack_update(desc, header);
 
     if (IRM_LIKELY(header->seq == desc->last_seq)) {
