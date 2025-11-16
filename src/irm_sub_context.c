@@ -1013,15 +1013,8 @@ irm_sub_context_data_handle(struct irm_sub_context* ctx,
         return;
     }
 
-    if (IRM_UNLIKELY(header->target_id && header->target_id != ctx->self_id)) {
-        IRM_DBG("target_id dismatched target_id %u, self_id %u, sender_id %u",
-            header->target_id, ctx->self_id, header->sender_id);
-        irm_mbuf_put(&ctx->netio->rx_pool, mbuf);
-        return;
-    }
-
-    irm_sub_context_nack_update(desc, header);
-
+    //irm_sub_context_nack_update(desc, header);
+    
     if (IRM_LIKELY(header->seq == desc->last_seq)) {
         IRM_DBG("sender_id %u, header seq %u == last seq %u, "
             "min %u, max %u cache_empty %d, sender_empty %d, commit",
@@ -1030,6 +1023,7 @@ irm_sub_context_data_handle(struct irm_sub_context* ctx,
             IRM_QUEUE_EMPTY(&ctx->cache_list));
         desc->last_seq = header->seq + 1;
         IRM_SUB_CONTEXT_COMMIT(mbuf);
+        irm_sub_context_nack_update(desc, header);
         return;
     }
 
@@ -1098,6 +1092,7 @@ irm_sub_context_data_handle(struct irm_sub_context* ctx,
     }    
 
 IRM_DO_CACHE:
+    irm_sub_context_nack_update(desc, header);
     IRM_SUB_CTX_CACHE_INSERT_TAIL(ctx, &mbuf->cache_ln);
     while (irm_sub_context_check_cache_min(ctx, header->sender_id));
 
