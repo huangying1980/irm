@@ -195,8 +195,8 @@ void* irm_pub_alloc(IRM_PUBHANDLE handle, size_t* max_size)
         return NULL;
     }
     msg = IRM_MBUF_MSG(irm_msg_data, mbuf, ctx->netops.payload_offset);
-    //*max_size = ctx->netops.max_payload_size;
-    *max_size = 2048;
+    *max_size = ctx->netops.max_payload_size;
+    //*max_size = 2048;
     return IRM_MSG_PAYLOAD(msg);
 }
 

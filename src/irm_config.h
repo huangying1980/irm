@@ -35,7 +35,13 @@ IRM_C_BEGIN
 #endif
 
 #ifndef IRM_CONFIG_TIMEOUT_RENACK
+
+#ifdef IRM_NACK_TIMEOUT_STATIC
+#define IRM_CONFIG_TIMEOUT_RENACK               (50 * 1000)
+#else
 #define IRM_CONFIG_TIMEOUT_RENACK               (10)
+#endif
+
 #endif
 
 #ifndef IRM_CONFIG_TIMEOUT_RENACK_BASE          

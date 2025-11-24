@@ -1554,7 +1554,7 @@ irm_sub_context_update_cache(struct irm_sub_context* ctx)
 #else
     desc[sender_id].nack.timeout =
         ctx->renack_timeout * desc[sender_id].nack.count
-        + IRM_CONFIG_TIMEOUT_RENACK_BASE;
+        + ctx->renack_timeout_base;
 #endif
 
     IRM_DBG("send nack msg, sender_id %u, start %u, end %u, count %u, timeout %lu",
@@ -1628,6 +1628,8 @@ IRM_HOT_CALL static void* irm_sub_context_event_loop(void* arg)
     uint64_t                idle_ts = 0;
     uint64_t                heartbeat_timeout;
     uint64_t                alive_timeout;
+    uint64_t                alive_ts = 0;
+    uint64_t                heartbeat_ts = 0;
 
     pid_t                   tid = -1;
     
@@ -1648,6 +1650,8 @@ IRM_HOT_CALL static void* irm_sub_context_event_loop(void* arg)
 
     ctx->renack_timeout = irm_time_clock_us2cycle(&tc,
         cfg->timeout.nack_timeout);
+    ctx->renack_timeout_base = irm_time_clock_us2cycle(&tc,
+        IRM_CONFIG_TIMEOUT_RENACK_BASE);
 
     IRM_DBG("idle_timeout %lu, heartbeat_timeout %lu, alive_timeout %lu",
         idle_timeout, heartbeat_timeout, alive_timeout);
@@ -1669,17 +1673,18 @@ IRM_HOT_CALL static void* irm_sub_context_event_loop(void* arg)
             continue;
         }
 
-        if (curr_ts - idle_ts >= alive_timeout) {
+        if (curr_ts - alive_ts >= alive_timeout) {
             IRM_DBG("curr_ts %lu, idle_ts %lu, alive_timeout %lu, "
                 "check alive", curr_ts, idle_ts, alive_timeout);
             irm_sub_context_check_alive(ctx);
-            IRM_NETIO_UPDATE_IDLE(ctx->netio, curr_ts);
+            alive_ts = curr_ts;
         }
-        if (curr_ts - idle_ts >= heartbeat_timeout) {
+
+        if (curr_ts - heartbeat_ts >= heartbeat_timeout) {
             IRM_DBG("curr_ts %lu, idle_ts %lu, heartbeat_timeout %lu, "
                 "send heartbeat", curr_ts, idle_ts, heartbeat_timeout);
             irm_sub_context_heartbeat(ctx);
-            IRM_NETIO_UPDATE_IDLE(ctx->netio, curr_ts);
+            heartbeat_ts = curr_ts;
         }     
     }
 

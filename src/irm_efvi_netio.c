@@ -310,6 +310,7 @@ irm_efvi_netio_egress_process(struct irm_netio* netio)
     struct irm_mbuf*       sent_mbuf;
     ef_event               evs[IRM_EFVI_EGRESS_POLL_EVENT_N];
     ef_request_id          ids[EF_VI_TRANSMIT_BATCH];
+    int64_t                last_send_seq;
     int                    events;
     int                    i;
     int                    sent_n;
@@ -326,6 +327,7 @@ irm_efvi_netio_egress_process(struct irm_netio* netio)
         goto IRM_EVENT_POLL;
     }
     header = IRM_MBUF_MSG(irm_msg_header, mbuf, efvi_netops.payload_offset);
+    last_send_seq = netio->last_send_seq;
     netio->last_send_seq = (int64_t)header->seq;
     ret = irm_efvi_netio_send(netio, mbuf);
 
@@ -334,6 +336,7 @@ irm_efvi_netio_egress_process(struct irm_netio* netio)
     if (IRM_UNLIKELY(ret < 0)) {
         IRM_ERR("efvi send failed, error %d", ret);
         mbuf->status = IRM_MBUF_STATUS_IDLE;
+        netio->last_send_seq = last_send_seq; 
         IRM_DBG("rollback mbuf %u, msg type %u, seq %u", mbuf->id,
             header->msg_type, header->seq);
         irm_buffer_rollback(netio->tx_buffer);

@@ -72,6 +72,7 @@ struct irm_sub_context {
     struct irm_mbuf*          reserved_mbufs[IRM_SUB_RESERVE_MBUF_MAX];
     uint64_t                  renack_timeout;
     uint64_t                  nack_all_timeout;
+    uint64_t                  renack_timeout_base;
 #ifdef IRM_RUNTIME_ENABLE
     struct irm_runtime        runtime;
 #endif

@@ -225,6 +225,7 @@ irm_native_netio_egress_process(struct irm_netio* netio)
     struct irm_mbuf*          tx_mbuf;
     struct sockaddr_in        addr;
     socklen_t                 addr_len = sizeof(addr);
+    int64_t                   last_send_seq;
     int                       ret;
 
     tx_mbuf = (struct irm_mbuf *)irm_buffer_get(netio->tx_buffer);
@@ -238,6 +239,7 @@ irm_native_netio_egress_process(struct irm_netio* netio)
 
     tx_mbuf->status = IRM_MBUF_STATUS_SENDING;
     header = IRM_MBUF_MSG(irm_msg_header, tx_mbuf, native_netops.payload_offset);
+    last_send_seq = netio->last_send_seq;
     netio->last_send_seq = (int64_t)header->seq;
     ret = irm_native_netio_send(netio, tx_mbuf);
 
@@ -248,6 +250,8 @@ irm_native_netio_egress_process(struct irm_netio* netio)
         IRM_WARN("rollback mbuf %u, msg type %u, seq %u", tx_mbuf->id,
             header->msg_type, header->seq);
 #endif
+        tx_mbuf->status = IRM_MBUF_STATUS_SENDING;
+        netio->last_send_seq = last_send_seq;
         irm_buffer_rollback(netio->tx_buffer);
     } 
 #if defined(IRM_DEBUG) || defined(IRM_DEBUG_VERBOSE)
