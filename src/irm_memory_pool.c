@@ -86,13 +86,15 @@ void irm_memory_pool_release(void* mpool)
         return;
     }
 
-    IRM_QUEUE_FOREACH_SAFE(iter, &pool->full_list, next) {
+    for (iter = pool->full_list.next; iter != &pool->full_list; iter = next) {
+        next = iter->next;
         slice = IRM_QUEUE_DATA(iter, struct irm_memory_slice, ln);    
         IRM_QUEUE_REMOVE(&slice->ln);
         irm_memory_slice_release(slice);
     }
 
-    IRM_QUEUE_FOREACH_SAFE(iter, &pool->free_list, next) {
+    for (iter = pool->free_list.next; iter != &pool->free_list; iter = next) {
+        next = iter->next;
         slice = IRM_QUEUE_DATA(iter, struct irm_memory_slice, ln);    
         IRM_QUEUE_REMOVE(&slice->ln);
         irm_memory_slice_release(slice);

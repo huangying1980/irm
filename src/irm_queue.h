@@ -80,10 +80,6 @@ do {  \
 #define IRM_QUEUE_FOREACH(_i, _queue) \
   for ((_i) = (_queue)->next; (_i) != (_queue); (_i) = (_i)->next)
 
-#define IRM_QUEUE_FOREACH_SAFE(_i, _queue, _next) \
-  for ((_i) = (_queue)->next, (_next) = (_i)->next; \
-    (_i) != (_queue); (_i) = (_next))
-
 #define IRM_QUEUE_FOREACH_FROM(_i, _queue) \
   for (; (_i) != (_queue); (_i) = (_i)->next)
 
