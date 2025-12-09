@@ -32,10 +32,14 @@ EFVI_SRC := irm_efvi_netio.c
 EFVI_CFLAGS := -DIRM_ENABLE_EFVI
 endif
 
+#MPOOL_LIB := -L../deps/mpool -Wl,-Bstatic -lmpool -Wl,-Bdynamic
+MPOOL_LIB := ../deps/mpool/libmpool.a
+MPOOL_INC := -I../deps/mpool
+
 RELEASE := -mtune=native -march=native -O3 -fomit-frame-pointer -fforce-addr -fivopts -ftree-vectorize -fweb -frename-registers -ftree-loop-linear -fno-bounds-check
 CFLAGS := -Wall -Werror -pthread -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 $(EFVI_CFLAGS) $(DPDK_CFLAGS) $(XDP_CFLAGS)
-INC := -I../ -I./ -I../include $(EFVI_INC) $(DPDK_INC) $(XDP_INC)
-LIB := -pthread $(EFVI_LIB) $(DPDK_LIB) $(XDP_LIB)
+INC := -I../ -I./ -I../include $(MPOOL_INC) $(EFVI_INC) $(DPDK_INC) $(XDP_INC)
+LIB := -pthread $(MPOOL_LIB) $(EFVI_LIB) $(DPDK_LIB) $(XDP_LIB)
 MAJOR := 1
 MINOR := 0
 SMALL := 0

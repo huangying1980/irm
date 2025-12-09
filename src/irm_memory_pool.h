@@ -18,6 +18,7 @@ void* irm_memory_alloc_align(void* mpool, size_t size,
     size_t align);
 void* irm_memory_calloc_align(void* mpool, size_t size,
     size_t align);
+void irm_memory_free(void* mpool, void* ptr);
 
 IRM_C_END
 

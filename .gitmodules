@@ -1,0 +1,3 @@
+[submodule "deps/mpool"]
+	path = deps/mpool
+	url = https://github.com/huangying1980/mpool.git
