@@ -1,6 +1,8 @@
 #huangying
 CC := gcc
-VPATH := ./:./runtime
+DEPS := ../deps
+MPOOL_PATH := $(DEPS)/mpool
+VPATH := ./:./runtime:$(MPOOL_PATH)
 AR := ar
 TARGET ?= release
 
@@ -26,20 +28,19 @@ XDP_CFLAGS := -DIRM_ENABLE_XDP
 endif
 
 ifeq ($(IRM_EFVI), on)
-EFVI_LIB := -L../deps/efvi -lciul1
-EFVI_INC := -I../deps/efvi
+EFVI_PATH := $(DEPS)/efvi
+EFVI_LIB := -L$(EFVI_PATH) -lciul1
+EFVI_INC := -I$(EFVI_PATH)
 EFVI_SRC := irm_efvi_netio.c
 EFVI_CFLAGS := -DIRM_ENABLE_EFVI
 endif
 
-#MPOOL_LIB := -L../deps/mpool -Wl,-Bstatic -lmpool -Wl,-Bdynamic
-MPOOL_LIB := ../deps/mpool/libmpool.a
-MPOOL_INC := -I../deps/mpool
+MPOOL_INC := -I$(MPOOL_PATH)
 
 RELEASE := -mtune=native -march=native -O3 -fomit-frame-pointer -fforce-addr -fivopts -ftree-vectorize -fweb -frename-registers -ftree-loop-linear -fno-bounds-check
 CFLAGS := -Wall -Werror -pthread -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 $(EFVI_CFLAGS) $(DPDK_CFLAGS) $(XDP_CFLAGS)
 INC := -I../ -I./ -I../include $(MPOOL_INC) $(EFVI_INC) $(DPDK_INC) $(XDP_INC)
-LIB := -pthread $(MPOOL_LIB) $(EFVI_LIB) $(DPDK_LIB) $(XDP_LIB)
+LIB := -pthread $(EFVI_LIB) $(DPDK_LIB) $(XDP_LIB)
 MAJOR := 1
 MINOR := 0
 SMALL := 0
@@ -55,7 +56,7 @@ else
     SO_TARGET := libirm.so.$(MAJOR).$(MINOR).$(SMALL)
 endif
 
-ALL_SRC := $(wildcard *.c)
+ALL_SRC := $(wildcard *.c $(MPOOL_PATH)/*.c)
 SRC := $(ALL_SRC)
 
 ifneq ($(IRM_EFVI), on)
@@ -71,12 +72,12 @@ endif
 AR_OBJ := $(SRC:%.c=%.a.o)
 SO_OBJ := $(SRC:%.c=%.so.o)
 
-.PHONY: all clean install debug
+.PHONY: all clean install debug build-mpool
 
 
 all: $(AR_TARGET) $(SO_TARGET) install
 
-	
+
 $(SO_OBJ): %.so.o:%.c
 	$(CC) -c $< -o $@ $(INC) $(CFLAGS) -fPIC $(VERSION) $(DEBUG) $(RELEASE)
 
@@ -99,6 +100,7 @@ clean:
 	rm -rf *.o $(SO_TARGET)
 	rm -rf libirm.a.* libirm.so.*
 	rm -rf ../libs
+	$(MAKE) -C $(MPOOL_PATH) clean
 
 debug:
 	echo $(ALL_SRC)
