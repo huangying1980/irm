@@ -43,7 +43,7 @@ INC := -I../ -I./ -I../include $(MPOOL_INC) $(EFVI_INC) $(DPDK_INC) $(XDP_INC)
 LIB := -pthread $(EFVI_LIB) $(DPDK_LIB) $(XDP_LIB)
 MAJOR := 1
 MINOR := 0
-SMALL := 0
+SMALL := 1
 VERSION := -DIRM_MAJOR=$(MAJOR) -DIRM_MINOR=$(MINOR) -DIRM_SMALL=$(SMALL)
 LDFLAGS := -Wl,--version-script=./irm.ver
 DEBUG :=
@@ -95,6 +95,7 @@ install:
 	cp $(AR_TARGET) ../libs
 	cp $(SO_TARGET) ../libs
 	ln -s ../libs/$(SO_TARGET) ../libs/libirm.so
+	ln -s ../libs/$(AR_TARGET) ../libs/libirm.a
 
 clean:
 	rm -rf *.o $(SO_TARGET)
