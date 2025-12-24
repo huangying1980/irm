@@ -72,7 +72,7 @@ endif
 AR_OBJ := $(SRC:%.c=%.a.o)
 SO_OBJ := $(SRC:%.c=%.so.o)
 
-.PHONY: all clean install debug build-mpool
+.PHONY: all clean install debug
 
 
 all: $(AR_TARGET) $(SO_TARGET) install
